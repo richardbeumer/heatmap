@@ -26,7 +26,6 @@ payload = {
 print("Requesting Token...\n")
 res = requests.post(auth_url, data=payload, verify=False)
 access_token = res.json()['access_token']
-print("Access Token = {}\n".format(access_token))
 
 #Logging in to Strava
 client = Client(access_token=access_token)
