@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.11.4-alpine3.18
 
 ADD gpx.py /
 ADD strava_local_heatmap.py /
