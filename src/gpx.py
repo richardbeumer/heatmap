@@ -41,12 +41,12 @@ def check_token():
         print("Updating tokens...")
         refresh_response = client.refresh_access_token(client_id=client_id, client_secret=client_secret, refresh_token=refresh_token)
         access_token = refresh_response['access_token']
-        refresh_token = refresh_response['refresh_token']
+        new_refresh_token = refresh_response['refresh_token']
         expires_at = refresh_response['expires_at']
         client.access_token = access_token
         client.refresh_token = refresh_token
         client.token_expires_at = expires_at
-        strava_secrets.update({"refresh_token":refresh_token, "access_token":access_token, "expires_at":expires_at})
+        strava_secrets.update({"refresh_token":new_refresh_token, "access_token":access_token, "expires_at":expires_at})
     else:
         print("Token still valid...")
 
