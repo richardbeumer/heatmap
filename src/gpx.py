@@ -47,12 +47,14 @@ def check_token():
         client.refresh_token = refresh_token
         client.token_expires_at = expires_at
         strava_secrets.update({"refresh_token":new_refresh_token, "access_token":access_token, "expires_at":expires_at})
+        #strava.update_vault_secret(strava_secrets)
     else:
         print("Token still valid...")
 
 check_token()
 
-webclient = WebClient(access_token=access_token, email=email, password=password)
+
+webclient = WebClient(access_token=client.access_token, email=email, password=password)
 
 # Store the current session's information
 jwt = webclient.jwt
@@ -63,6 +65,7 @@ webclient = WebClient(access_token=webclient_access_token, jwt=jwt)
 
 current_dir=os.getcwd()
 os.mkdir(current_dir + "/gpx")
+os.chmod(current_dir + "/gpx", 0o777)
 
 #Getting last activity
 for activity in client.get_activities(limit=maxactivities):
