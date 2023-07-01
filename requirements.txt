@@ -1,3 +1,6 @@
 folium
 stravaweblib
 stravalib
+hvac
+requests
+pytest-shutil

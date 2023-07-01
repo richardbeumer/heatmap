@@ -1,11 +1,15 @@
-FROM python:3.11.4-alpine3.18
+FROM cgr.dev/chainguard/python:3.11-dev AS builder
 
-ADD gpx.py /
-ADD strava_local_heatmap.py /
-ADD requirements.txt /
-
-
-RUN mkdir gpx
+WORKDIR /gpx
+WORKDIR /
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-CMD [ "python", "gpx.py" ]
+FROM cgr.dev/chainguard/python:3.11
+COPY --from=builder /home/nonroot/.local/lib/python3.11/site-packages /home/nonroot/.local/lib/python3.11/site-packages
+COPY --from=builder /gpx /app/gpx
+
+WORKDIR /app
+COPY src/ /app/
+
+ENTRYPOINT [ "python", "gpx.py" ]
