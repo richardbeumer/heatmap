@@ -53,7 +53,7 @@ def check_token():
         client.refresh_token = refresh_token
         client.token_expires_at = expires_at
         strava_secrets.update({"refresh_token":new_refresh_token, "access_token":access_token, "expires_at":expires_at})
-        strava.update_vault_secret(strava_secrets)
+        #strava.update_vault_secret(strava_secrets)
     else:
         logger.info("Token still valid...")
 
@@ -64,7 +64,7 @@ def check_jwt():
         new_jwt_token = jwt_refresh_response.jwt
         webclient.jwt = new_jwt_token
         strava_secrets.update({"jwt_token": new_jwt_token})
-        strava.update_vault_secret(strava_secrets)
+        #strava.update_vault_secret(strava_secrets)
     else:
         logger.info("JWT still valid....")
 

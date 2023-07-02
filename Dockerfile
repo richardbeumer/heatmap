@@ -1,12 +1,7 @@
-FROM cgr.dev/chainguard/python:3.11-dev AS builder
-
+FROM python:3.11-alpine3.18
 WORKDIR /
 COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-FROM cgr.dev/chainguard/python:3.11
-COPY --from=builder /home/nonroot/.local/lib/python3.11/site-packages /home/nonroot/.local/lib/python3.11/site-packages
-
+RUN pip install  --no-cache-dir -r requirements.txt
 WORKDIR /app
 COPY src/ /app/
 
