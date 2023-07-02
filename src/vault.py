@@ -48,13 +48,12 @@ class Vault:
         try:
             client = hvac.Client(url)
             client.auth.jwt.jwt_login(
-            role="degiro",
+            role="heatmap",
             jwt=self.get_keycloak_token()
         )
         except requests.exceptions.ConnectionError:
             self.logger.error(self.connection_error, url)
             raise ConnectionException(url)
-
 
         return client
 
