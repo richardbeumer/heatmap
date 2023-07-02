@@ -4,3 +4,4 @@ stravalib
 hvac
 requests
 pytest-shutil
+pyjwt

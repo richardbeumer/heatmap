@@ -2,7 +2,6 @@
 import re
 import glob
 import argparse
-import webbrowser
 
 from folium import Map
 from folium.plugins import HeatMap
@@ -89,16 +88,16 @@ def main(args):
     if not args.quiet:
         print('Saved {}'.format(args.output))
 
-    webbrowser.open(args.output, new = 2, autoraise = True)
+    #webbrowser.open(args.output, new = 2, autoraise = True)
 
-if __name__ == '__main__':
+def parse_args(): 
     parser = argparse.ArgumentParser(description = 'Generate a local heatmap from Strava GPX files', epilog = 'Report issues to github.com/remisalmon/strava-local-heatmap-browser')
 
-    parser.add_argument('--gpx-dir', metavar = 'DIR', default = 'gpx', help = 'directory containing the GPX files (default: gpx)')
+    parser.add_argument('--gpx-dir', metavar = 'DIR', default = '/app/gpx', help = 'directory containing the GPX files (default: /app/gpx)')
     parser.add_argument('--gpx-filters', metavar = 'FILTERS', action = 'append', help = 'glob filter(s) for the GPX files (default: *.gpx)')
     parser.add_argument('--skip-ratio', metavar = 'N', type = int, default = 1, help = 'read every other N point of each GPX file (default: 1)')
     parser.add_argument('--light-map', action='store_true', help = 'use light map background')
-    parser.add_argument('--output', metavar = 'FILE', default = 'strava_local_heatmap.html', help = 'output html file (default: strava_local_heatmap.html)')
+    parser.add_argument('--output', metavar = 'FILE', default = '/mnt/index.html', help = 'output html file (default: /mnt/index.html)')
     parser.add_argument('--radius', type = int, default = 2, help = 'radius of trackpoints in pixels (default: 2)')
     parser.add_argument('--blur', type = int, default = 2, help = 'amount of blur in pixels (default: 2)')
     parser.add_argument('--min-opacity', metavar = 'OPACITY', type = float, default = 0.3, help = 'minimum opacity value (default: 0.3)')
@@ -106,5 +105,5 @@ if __name__ == '__main__':
     parser.add_argument('--quiet', default = False, action = 'store_true', help = 'quiet output')
 
     args = parser.parse_args()
-
+    print(args)
     main(args)
