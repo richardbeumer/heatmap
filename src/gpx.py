@@ -26,7 +26,7 @@ data = {
 
 response = requests.post("https://www.strava.com/oauth/token", data=data)
 if response.status_code == 200:
-    logger.info(f"Successfully obtained access token for strava.")
+    logger.info("Successfully obtained access token for strava.")
     access_token = response.json()['access_token']
     client = Client(access_token=access_token)
 else:
@@ -43,24 +43,6 @@ def get_athlete_activities(max_activities=20):
         logger.error(f"Error fetching activities: {e}")
         raise
 
-def polyline_to_gpx(polyline = None):
-    if polyline == None:
-        raise Exception("Need a Google Polyline as parameter")
-
-    waypoints = None
-    try:
-        waypoints = Polyline.decode(polyline)
-    except Exception as e:
-        raise Exception("Error decoding polyline. err: {}".format(e))
-
-    gpx = gpxpy.gpx.GPX()
-    gpx.creator = "Ride with gpxpy"
-
-    for point in waypoints:
-        lat, lon = point
-        gpx.waypoints.append(gpxpy.gpx.GPXWaypoint(lat, lon))
-
-    return gpx.to_xml()
 
 def get_gpx_from_activity():
     activities = get_athlete_activities(int(os.environ.get('STRAVA_MAX_ACTIVITIES')))
@@ -70,13 +52,11 @@ def get_gpx_from_activity():
         header = {'Authorization': 'Bearer ' + access_token}
 
         latlong = requests.get(url, headers=header, params={'keys':['latlng']}).json()[0]['data']
-        time_list = requests.get(url, headers=header, params={'keys':['time']}).json()[1]['data']
         altitude = requests.get(url, headers=header, params={'keys':['altitude']}).json()[1]['data']
         # Create dataframe to store data 'neatly'
         data = pd.DataFrame([*latlong], columns=['lat','long'])
         data['altitude'] = altitude
-        #start = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ")
-        #data['time'] = [(start+timedelta(seconds=t)) for t in time_list]
+
         gpx = gpxpy.gpx.GPX()
         # Create first track in our GPX:
         gpx_track = gpxpy.gpx.GPXTrack()
@@ -90,7 +70,6 @@ def get_gpx_from_activity():
                         data.loc[idx, 'lat'],
                         data.loc[idx, 'long'],
                         elevation=data.loc[idx, 'altitude']
-                        #time=data.loc[idx, 'time']
             ))
         # Write data to gpx file
         current_dir=os.getcwd()
