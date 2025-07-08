@@ -1,7 +1,9 @@
 folium
-stravaweblib
+gpxpy
 stravalib
 hvac
 requests
+polyline
 pytest-shutil
 pyjwt
+pandas

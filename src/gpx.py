@@ -1,94 +1,85 @@
-import urllib3
-import os
-from stravaweblib import WebClient, DataFormat
-from stravalib.client import Client
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-from exceptions import VariableNotSetException, ConnectionException
 import vault
-import shutil
+import os
 import time
-from logger import Logger
-import jwt
+import requests
+import gpxpy
+import gpxpy.gpx
+import polyline as Polyline
 import strava_local_heatmap
+import pandas as pd
+from stravalib.client import Client
+from datetime import datetime, timedelta
+from logger import Logger
+
 
 logger = Logger.get_logger("GPX")
+
 strava = vault.Vault("network/strava")
 strava_secrets = strava.get_vault_secrets()
 
-#settings for Strava
-auth_url = "https://www.strava.com/oauth/token"
-activites_url = "https://www.strava.com/api/v3/athlete/activities"
-email=strava_secrets['user']
-password=strava_secrets['password']
-client_id=strava_secrets['client_id']
-client_secret=strava_secrets['client_secret']
-refresh_token=strava_secrets['refresh_token']
-expires_at=strava_secrets['expires_at']
-access_token=strava_secrets['access_token']
-jwt_token=strava_secrets['jwt_token']
-
-maxactivities = int(os.environ.get('STRAVA_MAX_ACTIVITIES'))
-
-payload = {
-    'client_id': client_id,
-    'client_secret': client_secret,
-    'refresh_token': refresh_token,
-    'grant_type': "refresh_token"    
+data = {
+    "client_id": strava_secrets['client_id'],
+    "client_secret": strava_secrets['client_secret'],
+    "refresh_token": strava_secrets['refresh_token'],
+    "grant_type": "refresh_token"
 }
 
-client = Client()
-client.token_expires_at = expires_at
-client.access_token = access_token
-client.refresh_token = refresh_token
+response = requests.post("https://www.strava.com/oauth/token", data=data)
+if response.status_code == 200:
+    logger.info("Successfully obtained access token for strava.")
+    access_token = response.json()['access_token']
+    client = Client(access_token=access_token)
+else:
+    logger.info(f"Error obtaining access token: {response.json()}")
+    raise HTTPError("https://www.strava.com/oauth/token", response.status_code, response.json(), None, None)
 
 
-def check_token():
-    if time.time() > float(client.token_expires_at):
-        logger.info("Updating tokens...")
-        refresh_response = client.refresh_access_token(client_id=client_id, client_secret=client_secret, refresh_token=refresh_token)
-        access_token = refresh_response['access_token']
-        new_refresh_token = refresh_response['refresh_token']
-        expires_at = refresh_response['expires_at']
-        client.access_token = access_token
-        client.refresh_token = refresh_token
-        client.token_expires_at = expires_at
-        strava_secrets.update({"refresh_token":new_refresh_token, "access_token":access_token, "expires_at":expires_at})
-        #strava.update_vault_secret(strava_secrets)
-    else:
-        logger.info("Token still valid...")
-
-def check_jwt():
-    if time.time() > jwt.decode(jwt_token, options={"verify_signature": False})['exp']:
-        logger.info("Updating jwt...")
-        jwt_refresh_response = WebClient(access_token=access_token, jwt=jwt_token)
-        new_jwt_token = jwt_refresh_response.jwt
-        webclient.jwt = new_jwt_token
-        strava_secrets.update({"jwt_token": new_jwt_token})
-        #strava.update_vault_secret(strava_secrets)
-    else:
-        logger.info("JWT still valid....")
+    
+def get_athlete_activities(max_activities=20):
+    try:
+        activities = client.get_activities(limit=max_activities)
+        return list(activities)
+    except Exception as e:
+        logger.error(f"Error fetching activities: {e}")
+        raise
 
 
-check_token()
-webclient = WebClient(access_token=client.access_token, email=email, password=password)
+def get_gpx_from_activity():
+    activities = get_athlete_activities(int(os.environ.get('STRAVA_MAX_ACTIVITIES')))
+    for activity in activities:
+        
+        url = f"https://www.strava.com/api/v3/activities/{activity.id}/streams"
+        header = {'Authorization': 'Bearer ' + access_token}
 
-current_dir=os.getcwd()
-if not os.path.exists(current_dir + "/gpx"):
-    os.mkdir(current_dir + "/gpx")
-    os.chmod(current_dir + "/gpx", 0o777)
+        latlong = requests.get(url, headers=header, params={'keys':['latlng']}).json()[0]['data']
+        altitude = requests.get(url, headers=header, params={'keys':['altitude']}).json()[1]['data']
+        # Create dataframe to store data 'neatly'
+        data = pd.DataFrame([*latlong], columns=['lat','long'])
+        data['altitude'] = altitude
 
-#Getting last activity
-for activity in client.get_activities(limit=maxactivities):
-    id=("{0.id}".format(activity))
-    data = webclient.get_activity_data(id, fmt=DataFormat.GPX)
-    logger.info("Processing activity: %s on file %s", activity, data.filename)
-    with open(current_dir + "/gpx/" + data.filename, 'wb') as f:
-        for chunk in data.content:
-            if not chunk:
-                break
-            f.write(chunk)
+        gpx = gpxpy.gpx.GPX()
+        # Create first track in our GPX:
+        gpx_track = gpxpy.gpx.GPXTrack()
+        gpx.tracks.append(gpx_track)
+        # Create first segment in our GPX track:
+        gpx_segment = gpxpy.gpx.GPXTrackSegment()
+        gpx_track.segments.append(gpx_segment)
+        # Create points:
+        for idx in data.index:
+            gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(
+                        data.loc[idx, 'lat'],
+                        data.loc[idx, 'long'],
+                        elevation=data.loc[idx, 'altitude']
+            ))
+        # Write data to gpx file
+        current_dir=os.getcwd()
+        if not os.path.exists(current_dir + "/gpx"):
+            os.mkdir(current_dir + "/gpx")
+            os.chmod(current_dir + "/gpx", 0o777)
+        filename = f"{activity.id}.gpx"
+        with open(current_dir + "/gpx/" + filename, 'w') as f:
+            f.write(gpx.to_xml())
 
-logger.info(os.listdir(current_dir + "/gpx"))
 
+get_gpx_from_activity()
 strava_local_heatmap.parse_args()
-shutil.rmtree(current_dir + "/gpx")

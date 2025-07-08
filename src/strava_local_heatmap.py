@@ -93,7 +93,7 @@ def main(args):
 def parse_args(): 
     parser = argparse.ArgumentParser(description = 'Generate a local heatmap from Strava GPX files', epilog = 'Report issues to github.com/remisalmon/strava-local-heatmap-browser')
 
-    parser.add_argument('--gpx-dir', metavar = 'DIR', default = '/app/gpx', help = 'directory containing the GPX files (default: /app/gpx)')
+    parser.add_argument('--gpx-dir', metavar = 'DIR', default = './gpx', help = 'directory containing the GPX files (default: ./gpx)')
     parser.add_argument('--gpx-filters', metavar = 'FILTERS', action = 'append', help = 'glob filter(s) for the GPX files (default: *.gpx)')
     parser.add_argument('--skip-ratio', metavar = 'N', type = int, default = 1, help = 'read every other N point of each GPX file (default: 1)')
     parser.add_argument('--light-map', action='store_true', help = 'use light map background')
