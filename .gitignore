@@ -1,5 +1,5 @@
 gpx/
 index.html
 .vscode
-venv
+.venv
 src/__pycache__/
