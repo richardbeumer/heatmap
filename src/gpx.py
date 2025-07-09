@@ -45,9 +45,10 @@ def get_athlete_activities(max_activities=20):
 
 
 def get_gpx_from_activity():
+    logger.info("Fetching last %s activities from Strava", os.environ.get('STRAVA_MAX_ACTIVITIES'))
     activities = get_athlete_activities(int(os.environ.get('STRAVA_MAX_ACTIVITIES')))
     for activity in activities:
-        
+        logger.info("Creating GPX for activity: %s (%s)", activity.name, activity.id)
         url = f"https://www.strava.com/api/v3/activities/{activity.id}/streams"
         header = {'Authorization': 'Bearer ' + access_token}
 
@@ -82,4 +83,5 @@ def get_gpx_from_activity():
 
 
 get_gpx_from_activity()
+logger.info("Creating Heatmap from GPX files")
 strava_local_heatmap.parse_args()
